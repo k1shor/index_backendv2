@@ -11,7 +11,6 @@ const BlogSchema = new mongoose.Schema({
     shortDescription: {
         type: String,
         required: true,
-        maxlength: 300,
         trim: true,
     },
 
@@ -37,13 +36,11 @@ const BlogSchema = new mongoose.Schema({
     metaTitle: {
         type: String,
         trim: true,
-        maxlength: 70,
     },
 
     metaDescription: {
         type: String,
         trim: true,
-        maxlength: 160,
     },
 
     keywords: {
