@@ -10,7 +10,7 @@ exports.getServices = async (req, res) => {
     const services = await Service.find().sort({ createdAt: -1 });
     res.json(services);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -25,7 +25,7 @@ exports.getServiceById = async (req, res) => {
     if (!service) return res.status(404).json({ message: "Service not found" });
     res.json(service);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -55,7 +55,7 @@ exports.createService = async (req, res) => {
     await service.save();
     res.status(201).json(service);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -80,7 +80,7 @@ exports.updateService = async (req, res) => {
     const updatedService = await service.save();
     res.json(updatedService);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -97,6 +97,6 @@ exports.deleteService = async (req, res) => {
     await service.deleteOne();
     res.json({ message: "Service deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
