@@ -1,68 +1,97 @@
-const Reasons = require('../models/IndexITHubWhy');
+const Reasons = require("../models/IndexITHubWhy");
+const cloudinary = require("../config/cloudinary");
 
-// ✅ Get all reasons
+// GET
 exports.getReasons = async (req, res) => {
   try {
-    const reasons = await Reasons.find().sort({ createdAt: -1 });
-    res.status(200).json(reasons);
+    const reasons = await Reasons.find().sort({ sn: 1, createdAt: -1 });
+    return res.status(200).json(reasons);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// ✅ Create a new reason (with optional image)
+// CREATE
 exports.createReason = async (req, res) => {
   try {
-    const { reason } = req.body;
-    const reason_image = req.file ? `/public/uploads/${req.file.filename}` : null;
+    const { reason, sn } = req.body;
 
     if (!reason) {
       return res.status(400).json({ message: "Reason is required" });
     }
 
-    const newReason = new Reasons({ reason, reason_image });
-    await newReason.save();
+    const reason_image = req.file?.path || "";
+    const reason_image_id = req.file?.filename || "";
 
-    res.status(201).json(newReason);
+    const newReason = new Reasons({
+      reason,
+      reason_image,
+      reason_image_id,
+      ...(sn !== undefined && sn !== "" ? { sn: Number(sn) } : {}),
+    });
+
+    await newReason.save();
+    return res.status(201).json(newReason);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// ✅ Update a reason (with optional image)
+// UPDATE (delete old Cloudinary image on replace)
 exports.updateReason = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedData = { reason: req.body.reason };
+    const existing = await Reasons.findById(id);
 
-    if (req.file) {
-      updatedData.reason_image = `/public/uploads/${req.file.filename}`;
-    }
-
-    const updated = await Reasons.findByIdAndUpdate(id, updatedData, { new: true });
-
-    if (!updated) {
+    if (!existing) {
       return res.status(404).json({ message: "Reason not found" });
     }
 
-    res.status(200).json(updated);
+    const updatedData = {};
+
+    if (req.body.reason !== undefined) {
+      updatedData.reason = req.body.reason;
+    }
+
+    if (req.body.sn !== undefined && req.body.sn !== "") {
+      updatedData.sn = Number(req.body.sn);
+    }
+
+    if (req.file) {
+      if (existing.reason_image_id) {
+        await cloudinary.uploader.destroy(existing.reason_image_id);
+      }
+
+      updatedData.reason_image = req.file.path;
+      updatedData.reason_image_id = req.file.filename;
+    }
+
+    const updated = await Reasons.findByIdAndUpdate(id, updatedData, {
+      new: true,
+    });
+
+    return res.status(200).json(updated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// ✅ Delete a reason
+// DELETE (delete Cloudinary image)
 exports.deleteReason = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Reasons.findByIdAndDelete(id);
-    
+
     if (!deleted) {
       return res.status(404).json({ message: "Reason not found" });
     }
 
-    res.status(200).json({ message: "Reason deleted successfully" });
+    if (deleted.reason_image_id) {
+      await cloudinary.uploader.destroy(deleted.reason_image_id);
+    }
+
+    return res.status(200).json({ message: "Reason deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };

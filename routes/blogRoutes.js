@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/fileUpload");  // <-- MULTER IMPORT
+
+// 🔁 switched from fileUpload → cloudinaryUpload
+const upload = require("../middleware/cloudinaryUpload")("blogs");
 
 const {
-    createBlog,
-    getAllBlogs,
-    getBlogBySlug,
-    updateBlog,
-    deleteBlog,
-    getBlogById
+  createBlog,
+  getAllBlogs,
+  getBlogBySlug,
+  updateBlog,
+  deleteBlog,
+  getBlogById,
 } = require("../controllers/blogController");
 
 router.post("/", upload.single("image"), createBlog);

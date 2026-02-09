@@ -1,13 +1,23 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
-const reasonsSchema = new mongoose.Schema({
+const reasonsSchema = new mongoose.Schema(
+  {
     reason: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
+      trim: true,
     },
     reason_image: {
-        type: String
-    }
-},{timestamps: true})
+      type: String,
+      default: "",
+    },
+    sn: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Reasons", reasonsSchema)
+module.exports = mongoose.model("Reasons", reasonsSchema);

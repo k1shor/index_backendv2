@@ -1,39 +1,54 @@
-const multer = require('multer')
-const fs = require('fs')
-const path = require('path')
+// const multer = require("multer");
+// const fs = require("fs");
+// const path = require("path");
 
-//for image storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const destination = 'public/uploads'
+// const destinationDir = path.join(process.cwd(), "public", "uploads");
 
-        if (!fs.existsSync(destination)) {
-            fs.mkdirSync(destination, { recursive: true })
-        }
-        cb(null, destination)
-    },
-    filename: function (req, file, cb) {
-        let ext = path.extname(file.originalname)
-        let fname = path.basename(file.originalname, ext)
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        const filename = file.fieldname + '-' + fname + uniqueSuffix + ext
-        cb(null, filename)
-    }
-})
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     if (!fs.existsSync(destinationDir)) {
+//       fs.mkdirSync(destinationDir, { recursive: true });
+//     }
+//     cb(null, destinationDir);
+//   },
+//   filename: function (req, file, cb) {
+//     const ext = path.extname(file.originalname).toLowerCase();
+//     const base = path
+//       .basename(file.originalname, ext)
+//       .toLowerCase()
+//       .replace(/[^a-z0-9-_]/g, "-")
+//       .replace(/-+/g, "-")
+//       .replace(/^-|-$/g, "");
 
-const imageFilter = (req, file, cb) => {
-    if (!file.originalname.match(/\.(webp|jpeg|JPEG|png|PNG|gif|GIF|svg|SVG|jpg|JPG|jfif|JFIF|avif|AVIF)/)) {
-        return cb(new Error("Invalid image file"), false)
-    }
-    cb(null, true)
-}
+//     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+//     cb(null, `${file.fieldname}-${base}-${uniqueSuffix}${ext}`);
+//   },
+// });
 
-const upload = multer({
-    storage: storage,
-    fileFilter: imageFilter,
-    limits: {
-        fileSize: 5000000
-    }
-})
+// const allowedExt = new Set([".webp", ".jpeg", ".jpg", ".png", ".gif", ".avif", ".jfif"]);
+// const allowedMime = new Set([
+//   "image/webp",
+//   "image/jpeg",
+//   "image/png",
+//   "image/gif",
+//   "image/avif",
+// ]);
 
-module.exports = upload
+// const imageFilter = (req, file, cb) => {
+//   const ext = path.extname(file.originalname).toLowerCase();
+//   const mime = (file.mimetype || "").toLowerCase();
+
+//   if (!allowedExt.has(ext) || !allowedMime.has(mime)) {
+//     return cb(new Error("Invalid image file"), false);
+//   }
+
+//   cb(null, true);
+// };
+
+// const upload = multer({
+//   storage,
+//   fileFilter: imageFilter,
+//   limits: { fileSize: 5 * 1024 * 1024 },
+// });
+
+// module.exports = upload;

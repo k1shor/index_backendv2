@@ -1,18 +1,18 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+
 const {
   getReasons,
   createReason,
   updateReason,
   deleteReason,
-} = require('../controllers/ReasonsController');
-const upload = require('../middleware/fileUpload');
+} = require("../controllers/ReasonsController");
 
-// Routes
-router.get('/', getReasons);
-router.post('/', upload.single('reason_image'), createReason);
-router.put('/:id', upload.single('reason_image'), updateReason);
+const upload = require("../middleware/cloudinaryUpload")("reasons");
 
-router.delete('/:id', deleteReason);
+router.get("/", getReasons);
+router.post("/", upload.single("reason_image"), createReason);
+router.put("/:id", upload.single("reason_image"), updateReason);
+router.delete("/:id", deleteReason);
 
 module.exports = router;
