@@ -11,6 +11,7 @@ const serviceRoutes = require("./routes/ServiceRoutes");
 const projectRoutes = require("./routes/ProjectRoutes");
 const reasonsRoutes = require("./routes/reasonRoutes");
 const blogRoutes = require("./routes/blogRoutes");
+const siteContentRoutes = require("./routes/siteContentRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/reasons", reasonsRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/sitecontent", siteContentRoutes)
 
 // app.use("/api/public/uploads", express.static(path.join(__dirname, "public/uploads")));
 
