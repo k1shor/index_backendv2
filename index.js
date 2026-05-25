@@ -18,21 +18,28 @@ const app = express();
 const parseOrigins = (value = "") =>
   value
     .split(",")
-    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ""))
+    .map((origin) =>
+      origin
+        .trim()
+        .replace(/^['"]|['"]$/g, "")
+        .replace(/\/$/, "")
+    )
     .filter(Boolean);
 
-const allowedOrigins = [
+const allowedOrigins = new Set([
+  "https://indexithub.com",
+  "https://www.indexithub.com",
   ...parseOrigins(process.env.FRONTEND_URL),
   ...parseOrigins(process.env.CORS_ORIGINS),
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
-];
+]);
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       return callback(null, true);
     }
 
