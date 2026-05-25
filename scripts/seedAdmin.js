@@ -12,12 +12,12 @@ const mustGetEnv = (k) => {
 async function main() {
     const uri = mustGetEnv("DATABASE");
 
-    const email = (process.env.SEED_ADMIN_EMAIL || "admin@example.com")
+    const email = (process.env.SEED_ADMIN_EMAIL || "admin2@example.com")
         .toLowerCase()
         .trim();
 
     const password = process.env.SEED_ADMIN_PASSWORD || "Admin@12345";
-    const name = process.env.SEED_ADMIN_NAME || "Admin";
+    const username = process.env.SEED_ADMIN_NAME || "Admin";
 
     await mongoose.connect(uri);
 
@@ -31,7 +31,7 @@ async function main() {
     const hashed = await bcrypt.hash(password, 12);
 
     await UserModel.create({
-        name,
+        username,
         email,
         password: hashed,
         role: 1,

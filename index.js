@@ -15,8 +15,34 @@ const siteContentRoutes = require("./routes/siteContentRoutes");
 
 const app = express();
 
+const parseOrigins = (value = "") =>
+  value
+    .split(",")
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ""))
+    .filter(Boolean);
+
+const allowedOrigins = [
+  ...parseOrigins(process.env.FRONTEND_URL),
+  ...parseOrigins(process.env.CORS_ORIGINS),
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
+
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan("dev"));
 
 app.use("/api/user", userRoutes);
