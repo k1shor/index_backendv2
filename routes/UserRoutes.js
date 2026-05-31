@@ -16,6 +16,7 @@ const {
   deleteUser,
   isLoggedIn,
   isAdmin,
+  getUserStats,
   updateProfile,
   getProfile,
 } = require("../controllers/UserController");
@@ -32,6 +33,7 @@ router.post("/resetpassword/:token", resetPassword);
 router.post("/signin", login);
 
 // ADMIN
+router.get("/stats", isAdmin, getUserStats);
 router.get("/getallusers", isAdmin, getAllUsers);
 router.get("/getuser/:id", isAdmin, getUserById);
 router.put("/updateuser/:id", isAdmin, updateUser);

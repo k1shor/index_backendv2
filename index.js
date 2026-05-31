@@ -12,6 +12,10 @@ const projectRoutes = require("./routes/ProjectRoutes");
 const reasonsRoutes = require("./routes/reasonRoutes");
 const blogRoutes = require("./routes/blogRoutes");
 const siteContentRoutes = require("./routes/siteContentRoutes");
+const databaseRoutes = require("./routes/DatabaseRoutes");
+const messageRoutes = require("./routes/MessageRoutes");
+const careerRoutes = require("./routes/CareerRoutes");
+const applyCareerRoutes = require("./routes/ApplyCareerRoutes");
 
 const app = express();
 
@@ -32,8 +36,10 @@ const allowedOrigins = new Set([
   ...parseOrigins(process.env.FRONTEND_URL),
   ...parseOrigins(process.env.CORS_ORIGINS),
   "http://localhost:3000",
+  "http://localhost:3003",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
+  "http://127.0.0.1:3003",
   "http://127.0.0.1:5173",
 ]);
 
@@ -48,7 +54,8 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cors(corsOptions));
 app.use(morgan("dev"));
 
@@ -56,9 +63,14 @@ app.use("/api/user", userRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/career", careerRoutes);
+app.use("/api/careers", careerRoutes);
 app.use("/api/reasons", reasonsRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/sitecontent", siteContentRoutes)
+app.use("/api/admin/database", databaseRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api", applyCareerRoutes);
 
 // app.use("/api/public/uploads", express.static(path.join(__dirname, "public/uploads")));
 

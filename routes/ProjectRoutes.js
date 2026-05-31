@@ -5,7 +5,8 @@ const { protect, admin } = require("../middleware/authMiddleware");
 
 // Public routes
 router.get("/", projectController.getAllProjects);
-router.get("/id/:id", protect, admin, projectController.updateProject);
+router.get("/admin/all", protect, admin, projectController.getAllProjectsAdmin);
+router.get("/id/:id", protect, admin, projectController.getProjectById);
 router.get("/:slug", projectController.getProjectBySlug);
 
 // Admin routes (CRUD) - Protected

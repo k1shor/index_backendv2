@@ -270,8 +270,44 @@ exports.isAdmin = async (req, res, next) => {
 // =============================
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await UserModel.find().sort({ createdAt: -1 });
-    return res.json(users);
+    const search = (req.query.search || "").trim();
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const query = search
+      ? {
+          $or: [
+            { firstname: { $regex: search, $options: "i" } },
+            { lastname: { $regex: search, $options: "i" } },
+            { username: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { position: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const [users, total, stats] = await Promise.all([
+      UserModel.find(query)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      UserModel.countDocuments(query),
+      getUserStatsSummary(),
+    ]);
+
+    return res.json({
+      data: users,
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit) || 1,
+      },
+      stats,
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -282,7 +318,7 @@ exports.getAllUsers = async (req, res) => {
 // =============================
 exports.getUserById = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.params.id);
+    const user = await UserModel.findById(req.params.id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found." });
     return res.json(user);
   } catch (err) {
@@ -297,8 +333,9 @@ exports.updateUser = async (req, res) => {
   try {
     const updates = { ...req.body };
     delete updates.password;
+    delete updates.role;
 
-    const user = await UserModel.findByIdAndUpdate(req.params.id, updates, { new: true });
+    const user = await UserModel.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
     if (!user) return res.status(404).json({ error: "User not found." });
 
     return res.json({ message: "User updated successfully.", user });
@@ -312,6 +349,10 @@ exports.updateUser = async (req, res) => {
 // =============================
 exports.deleteUser = async (req, res) => {
   try {
+    if (String(req.user._id) === String(req.params.id)) {
+      return res.status(400).json({ error: "You cannot delete your own admin account." });
+    }
+
     const user = await UserModel.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found." });
 
@@ -330,11 +371,20 @@ exports.deleteUser = async (req, res) => {
 // =============================
 exports.changeRole = async (req, res) => {
   try {
+    const role = Number(req.body.role);
+    if (![0, 1, 2].includes(role)) {
+      return res.status(400).json({ error: "Invalid role." });
+    }
+
+    if (String(req.user._id) === String(req.params.id)) {
+      return res.status(400).json({ error: "You cannot change your own role." });
+    }
+
     const user = await UserModel.findByIdAndUpdate(
       req.params.id,
-      { role: req.body.role },
+      { role },
       { new: true }
-    );
+    ).select("-password");
 
     if (!user) return res.status(404).json({ error: "User not found." });
     return res.json(user);
@@ -352,10 +402,29 @@ exports.verifyUserByAdmin = async (req, res) => {
       req.params.id,
       { isVerified: true },
       { new: true }
-    );
+    ).select("-password");
 
     if (!user) return res.status(404).json({ error: "User not found." });
     return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+const getUserStatsSummary = async () => {
+  const [total, verified, admins, pending] = await Promise.all([
+    UserModel.countDocuments(),
+    UserModel.countDocuments({ isVerified: true }),
+    UserModel.countDocuments({ role: { $gte: 1 } }),
+    UserModel.countDocuments({ isVerified: false }),
+  ]);
+
+  return { total, verified, admins, pending };
+};
+
+exports.getUserStats = async (req, res) => {
+  try {
+    return res.json(await getUserStatsSummary());
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

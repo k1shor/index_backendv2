@@ -32,6 +32,10 @@ const CareerModel = new Schema({
         default: "Remote"
     },
     type: { type: String, enum: ["full-time", "part-time", "remote"], default: "full-time" },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
 
 
 }, { timestamps: true })
