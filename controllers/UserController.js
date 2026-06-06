@@ -39,12 +39,18 @@ exports.register = async (req, res) => {
       !age ||
       !phonenumber
     ) {
-      return res.status(400).json({ error: "All required fields must be filled." });
+      return res
+        .status(400)
+        .json({ error: "All required fields must be filled." });
     }
 
-    const existingUser = await UserModel.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await UserModel.findOne({
+      $or: [{ email }, { username }],
+    });
     if (existingUser) {
-      return res.status(400).json({ error: "Email or username already exists." });
+      return res
+        .status(400)
+        .json({ error: "Email or username already exists." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,7 +99,9 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ error: "Server error. Please try again later." });
+    return res
+      .status(500)
+      .json({ error: "Server error. Please try again later." });
   }
 };
 
@@ -104,12 +112,14 @@ exports.verifyUser = async (req, res) => {
   try {
     const token = req.params.token;
     const tokenData = await TokenModel.findOne({ token });
-    if (!tokenData) return res.status(400).json({ error: "Invalid or expired token." });
+    if (!tokenData)
+      return res.status(400).json({ error: "Invalid or expired token." });
 
     const user = await UserModel.findById(tokenData.user);
     if (!user) return res.status(400).json({ error: "User not found." });
 
-    if (user.isVerified) return res.status(400).json({ error: "User already verified." });
+    if (user.isVerified)
+      return res.status(400).json({ error: "User already verified." });
 
     user.isVerified = true;
     await user.save();
@@ -130,7 +140,8 @@ exports.resendVerification = async (req, res) => {
     const user = await UserModel.findOne({ email: req.body.email });
     if (!user) return res.status(400).json({ error: "Email not registered." });
 
-    if (user.isVerified) return res.status(400).json({ error: "User already verified." });
+    if (user.isVerified)
+      return res.status(400).json({ error: "User already verified." });
 
     const tokenDoc = await TokenModel.create({
       token: crypto.randomBytes(24).toString("hex"),
@@ -180,7 +191,8 @@ exports.forgetpassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const tokenDoc = await TokenModel.findOne({ token: req.params.token });
-    if (!tokenDoc) return res.status(400).json({ error: "Invalid or expired token." });
+    if (!tokenDoc)
+      return res.status(400).json({ error: "Invalid or expired token." });
 
     const user = await UserModel.findById(tokenDoc.user);
     if (!user) return res.status(400).json({ error: "User not found." });
@@ -208,12 +220,21 @@ exports.login = async (req, res) => {
     if (!user) return res.status(400).json({ error: "Email not registered." });
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(400).json({ error: "Invalid credentials." });
+    if (!validPassword)
+      return res.status(400).json({ error: "Invalid credentials." });
 
-    if (!user.isVerified) return res.status(400).json({ error: "User not verified. Please verify first." });
+    if (!user.isVerified)
+      return res
+        .status(400)
+        .json({ error: "User not verified. Please verify first." });
 
     const token = jwt.sign(
-      { _id: user._id, role: user.role, username: user.username, email: user.email },
+      {
+        _id: user._id,
+        role: user.role,
+        username: user.username,
+        email: user.email,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -257,7 +278,8 @@ exports.isAdmin = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await UserModel.findById(decoded._id);
-    if (!user || user.role < 1) return res.status(403).json({ error: "Not authorized." });
+    if (!user || user.role < 1)
+      return res.status(403).json({ error: "Not authorized." });
     req.user = user;
     next();
   } catch (err) {
@@ -272,7 +294,10 @@ exports.getAllUsers = async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 10, 1),
+      100
+    );
     const skip = (page - 1) * limit;
 
     const query = search
@@ -329,13 +354,40 @@ exports.getUserById = async (req, res) => {
 // =============================
 // ADMIN: UPDATE USER (NO PASSWORD)
 // =============================
+// exports.updateUser = async (req, res) => {
+//   try {
+//     const updates = { ...req.body };
+//     delete updates.password;
+//     delete updates.role;
+
+//     const user = await UserModel.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
+//     if (!user) return res.status(404).json({ error: "User not found." });
+
+//     return res.json({ message: "User updated successfully.", user });
+//   } catch (err) {
+//     return res.status(500).json({ error: err.message });
+//   }
+// };
 exports.updateUser = async (req, res) => {
   try {
     const updates = { ...req.body };
     delete updates.password;
     delete updates.role;
 
-    const user = await UserModel.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
+    // Check if a new file was uploaded via middleware
+    if (req.file) {
+      // Find old user first to clean up old image if necessary
+      const oldUser = await UserModel.findById(req.params.id);
+      if (oldUser && oldUser.image_id) {
+        await cloudinary.uploader.destroy(oldUser.image_id).catch(() => {});
+      }
+      updates.image = req.file.path;
+      updates.image_id = req.file.filename;
+    }
+
+    const user = await UserModel.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    }).select("-password");
     if (!user) return res.status(404).json({ error: "User not found." });
 
     return res.json({ message: "User updated successfully.", user });
@@ -350,7 +402,9 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     if (String(req.user._id) === String(req.params.id)) {
-      return res.status(400).json({ error: "You cannot delete your own admin account." });
+      return res
+        .status(400)
+        .json({ error: "You cannot delete your own admin account." });
     }
 
     const user = await UserModel.findByIdAndDelete(req.params.id);
@@ -377,7 +431,9 @@ exports.changeRole = async (req, res) => {
     }
 
     if (String(req.user._id) === String(req.params.id)) {
-      return res.status(400).json({ error: "You cannot change your own role." });
+      return res
+        .status(400)
+        .json({ error: "You cannot change your own role." });
     }
 
     const user = await UserModel.findByIdAndUpdate(
@@ -432,13 +488,17 @@ exports.getUserStats = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   const UserModel = require("../models/UserModel");
-  const updatedUser = await UserModel.findByIdAndUpdate(req.user._id, req.body, { new: true });
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    req.user._id,
+    req.body,
+    { new: true }
+  );
   if (!updatedUser) return res.status(404).json({ error: "User not found" });
   res.json({ message: "Profile updated successfully", user: updatedUser });
-}
+};
 
 exports.getProfile = async (req, res) => {
   const UserModel = require("../models/UserModel");
   const user = await UserModel.findById(req.user._id);
   res.json(user);
-}
+};

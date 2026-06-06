@@ -44,6 +44,9 @@ router.put("/verifyuserbyadmin/:id", isAdmin, verifyUserByAdmin);
 // LOGGED-IN USER
 router.get("/profile", isLoggedIn, getProfile);
 
+// PUBLIC ROUTES
+router.get("/team", getAllUsers);
+
 router.put("/updateprofile", isLoggedIn, updateProfile );
 
 module.exports = router;
