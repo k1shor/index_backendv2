@@ -41,6 +41,7 @@ const UserModel = new Schema({
     },
     position: String,
     image: String,
+    image_id: String,
     about: {
         type: String,
         trim: true

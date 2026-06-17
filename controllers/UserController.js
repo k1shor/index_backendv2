@@ -44,6 +44,12 @@ exports.register = async (req, res) => {
         .json({ error: "All required fields must be filled." });
     }
 
+    const VALID_GENDERS = ["male", "female", "others"];
+
+    if (gender && !VALID_GENDERS.includes(gender)) {
+      return res.status(400).json({ error: "Invalid gender value." });
+    }
+
     const existingUser = await UserModel.findOne({
       $or: [{ email }, { username }],
     });
@@ -486,15 +492,48 @@ exports.getUserStats = async (req, res) => {
   }
 };
 
+// -- UPDATE PROFILE --
+
+// exports.updateProfile = async (req, res) => {
+//   const UserModel = require("../models/UserModel");
+//   const updatedUser = await UserModel.findByIdAndUpdate(
+//     req.user._id,
+//     req.body,
+//     { new: true }
+//   );
+//   if (!updatedUser) return res.status(404).json({ error: "User not found" });
+//   res.json({ message: "Profile updated successfully", user: updatedUser });
+// };
+
 exports.updateProfile = async (req, res) => {
-  const UserModel = require("../models/UserModel");
-  const updatedUser = await UserModel.findByIdAndUpdate(
-    req.user._id,
-    req.body,
-    { new: true }
-  );
-  if (!updatedUser) return res.status(404).json({ error: "User not found" });
-  res.json({ message: "Profile updated successfully", user: updatedUser });
+  try {
+    const updates = { ...req.body };
+    delete updates.password; // prevent password change via this route
+    delete updates.role; // prevent role escalation
+
+    // Handle new image upload
+    if (req.file) {
+      // Delete old image from Cloudinary if one exists
+      const oldUser = await UserModel.findById(req.user._id);
+      if (oldUser?.image_id) {
+        await cloudinary.uploader.destroy(oldUser.image_id).catch(() => {});
+      }
+      updates.image = req.file.path;
+      updates.image_id = req.file.filename;
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      updates,
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+
+    res.json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 exports.getProfile = async (req, res) => {

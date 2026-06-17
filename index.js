@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const path = require("path");
 
 const userRoutes = require("./routes/UserRoutes");
+const teamMemberRoutes = require("./routes/TeamMemberRoutes");
 const aboutRoutes = require("./routes/AboutRoutes");
 const serviceRoutes = require("./routes/ServiceRoutes");
 const projectRoutes = require("./routes/ProjectRoutes");
@@ -60,6 +61,7 @@ app.use(cors(corsOptions));
 app.use(morgan("dev"));
 
 app.use("/api/user", userRoutes);
+app.use("/api/team", teamMemberRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/projects", projectRoutes);
@@ -67,7 +69,7 @@ app.use("/api/career", careerRoutes);
 app.use("/api/careers", careerRoutes);
 app.use("/api/reasons", reasonsRoutes);
 app.use("/api/blogs", blogRoutes);
-app.use("/api/sitecontent", siteContentRoutes)
+app.use("/api/sitecontent", siteContentRoutes);
 app.use("/api/admin/database", databaseRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api", applyCareerRoutes);
